@@ -1,2 +1,2 @@
-.idea
-.DS_Store
+gui.add(synf, 'numNotes', 0, 88);
+gui.add(synf, 'autoTune', { On: true, Off: false});
