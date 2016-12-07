@@ -8,12 +8,13 @@ var Synf = function() {
     this.numNotes = 88;
     this.autoTune = true;
     this.oscillatorType = 'sine';
+    this.frequency = 440;
 
     amp = context.createGain();
     amp.gain.value = 0;
 
     oscillator = context.createOscillator();
-    oscillator.frequency.value = 440;
+    oscillator.frequency.value = this.frequency;
     oscillator.type = this.oscillatorType;
     oscillator.connect(amp);
 
@@ -21,21 +22,22 @@ var Synf = function() {
 
     oscillator.start(0);
     var mousedown = false;
+
     window.addEventListener("mousemove", function(e) {
+        that.setTone(e, "mousemove");
+    });
 
-        var perc = (e.pageX / window.innerWidth);
+    window.addEventListener("keydown", function(e) {
+        that.setTone(e, "keydown");
 
-        var key = (that.numNotes - that.numNotes) / 2 + (that.numNotes * perc); 
-        if (that.autoTune) {
-            key = Math.ceil(key);
-        }
-        var hz = Math.pow(2, ((key - 49) / 12)) * 440;
+        oscillator.type = that.oscillatorType;
+        mousedown = true;
+        amp.gain.value = 1;// - (e.pageY / window.innerHeight);
+    });
 
-        oscillator.frequency.value = hz;
-        if (mousedown) {
-
-            amp.gain.value = 1 - (e.pageY / window.innerHeight);
-        }
+    window.addEventListener("keyup", function(e) {
+        mousedown = false;
+        amp.gain.value = 0;
     });
 
     window.addEventListener("mousedown", function(e) {
@@ -48,6 +50,28 @@ var Synf = function() {
         mousedown = false;
         amp.gain.value = 0;
     });
+
+    this.setTone = function(e, type) {
+        if (type === "mousemove") {
+            var perc = (e.pageX / window.innerWidth);
+        }
+
+        if (type === "keydown") {
+            var perc = (e.keyCode / 222);
+        }
+
+        var key = (that.numNotes - that.numNotes) / 2 + (that.numNotes * perc);
+        if (that.autoTune) {
+            key = Math.ceil(key);
+        }
+        var hz = Math.pow(2, ((key - 49) / 12)) * that.frequency;
+
+        oscillator.frequency.value = hz;
+
+        if (mousedown) {
+            amp.gain.value = 1;// - (e.pageY / window.innerHeight);
+        }
+    };
 
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext("2d");
@@ -63,7 +87,7 @@ var Synf = function() {
             if (keyIndex === 1 || keyIndex === 4 || keyIndex === 6 || keyIndex === 9 || keyIndex === 11) {
                 color = Math.random() * 0.05 + 0.7;
             }
-            color = Math.floor(color * 256);
+            color = Math.floor(color * 255);
             color = 'rgb(' + color + ',' + color + ',' + color + ')';
             ctx.fillStyle = color;
             ctx.fillRect(i * canvas.width / this.numNotes, 0, canvas.width / this.numNotes, canvas.height);
@@ -91,9 +115,10 @@ gui.add(synf, 'oscillatorType', [
 ]);
 
 gui.add(synf, 'autoTune');
-var controller = gui.add(synf, 'numNotes', 1, 88);
+gui.add(synf, 'frequency', 4, 440);
 
-controller.onFinishChange(function(value) {
+var numNotesController = gui.add(synf, 'numNotes', 1, 88);
+numNotesController.onFinishChange(function(value) {
     synf.numNotes = value;
     synf.drawCanvas();
 });
